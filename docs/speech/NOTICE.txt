@@ -1,0 +1,10 @@
+Speech recognition runs locally with @lichess-org/vosk-browser 0.0.3.
+Source: https://github.com/lichess-org/vosk-browser
+This copy of the worker streams a model archive split into three files.
+
+Mandarin model: vosk-model-small-cn-0.22, Alpha Cephei.
+Source: https://alphacephei.com/vosk/models/vosk-model-small-cn-0.22.zip
+The model is repackaged from ZIP to tar.gz and split for static hosting.
+
+The speech engine and model are distributed under Apache License 2.0.
+See LICENSE.txt.
