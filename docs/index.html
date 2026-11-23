@@ -1,0 +1,1721 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#eff8f7">
+<meta name="description" content="比特书房提词器，支持摄像头录制、语音跟读与匀速滚动。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="比特书房提词器">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./bit-study-home-192.png">
+<link rel="apple-touch-icon" href="./bit-study-home-180.png">
+<title>比特书房提词器</title>
+<style>
+:root{color-scheme:dark;--bg:#090e19;--card:#101827;--line:#28374d;--text:#edf4ff;--muted:#9eafc7;--accent:#83ddff;--radius:22px;font:16px/1.5 "PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}
+button,select{cursor:pointer}
+button{display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--text);border:1px solid var(--line);border-radius:12px;background:#19253a;min-height:44px;padding:0 13px;font-weight:650}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+svg{width:19px;height:19px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.shell{max-width:1200px;margin:auto;padding:0 32px max(32px,env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;min-height:78px;padding-top:env(safe-area-inset-top);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:20px;letter-spacing:.025em}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--accent);color:#091e32;display:grid;place-items:center}
+.logo svg{width:22px;height:22px;stroke-width:2}
+.install{background:transparent;font-size:14px}
+.workspace{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(320px,1fr);gap:20px;margin-top:28px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);min-width:0}
+.editor{padding:24px;display:flex;flex-direction:column;gap:16px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.editor-head-actions{display:flex;align-items:center;gap:10px}
+h1,h2{margin:0;font-size:18px;font-weight:750}
+.small{color:var(--muted);font-size:13px}
+.editor textarea{width:100%;height:385px;min-height:160px;resize:vertical;border:1px solid var(--line);border-radius:14px;background:#0a111e;color:var(--text);padding:16px 18px;font-size:16px;line-height:1.9}
+.editor textarea::placeholder{color:#91a2bc}
+.editor-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sample{font-size:13px;min-height:38px}
+.right{display:grid;gap:16px}
+.preview{padding:16px;display:grid;gap:12px}
+.preview .panel-head{padding:0 4px}
+.preview h2{font-size:15px}
+.preview-screen{height:200px;position:relative;overflow:hidden;background:#070c15;border:1px solid #293c58;border-radius:14px;padding:18px 24px}
+.preview-screen::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 55%,#070c15);pointer-events:none}
+.preview-copy{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;font-weight:650}
+.preview-copy:empty::before{content:"粘贴稿件后在这里预览";font-size:16px;color:var(--muted)}
+.settings{padding:16px 20px;display:grid;gap:12px}
+.setting{display:grid;grid-template-columns:64px minmax(0,1fr) 72px;align-items:center;gap:10px;font-size:14px}
+.setting output{text-align:right;color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:0;min-height:28px}
+.options{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 12px;border-top:1px solid var(--line);padding-top:12px}
+.options label{display:flex;align-items:center;gap:8px;font-size:14px;min-height:38px}
+select{background:#19253a;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+.toggle{font-size:14px;min-height:38px}
+[aria-pressed=true]{border-color:var(--accent);color:var(--accent)}
+.primary{background:var(--accent);border-color:var(--accent);color:#071c34;min-height:52px}
+.primary:hover:not(:disabled){background:#b2edff}
+#start{width:100%}
+dialog{width:min(460px,calc(100vw - 32px));padding:24px;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:var(--radius)}
+dialog::backdrop{background:#000a}
+dialog p{color:#c4d3e9}
+body.reading{overflow:hidden}
+.reader{background:#070c15;position:fixed;inset:0;z-index:2;display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:0}
+.reader-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 8px max(12px,env(safe-area-inset-left));background:#0c1321}
+.reader-head .small{font-variant-numeric:tabular-nums}
+.reader-stage{position:relative;min-height:0}
+.viewport{height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:none;touch-action:pan-y}
+.viewport::-webkit-scrollbar{display:none}
+.reader-copy{margin:auto;max-width:1050px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.58;font-weight:650;padding-inline:clamp(25px,8vw,125px);user-select:none}
+.guide{position:absolute;top:32%;left:0;right:0;height:0;border-top:1px solid #83ddff73;pointer-events:none}
+.guide::before,.guide::after{content:"";position:absolute;top:-5px;border:5px solid transparent}
+.guide::before{left:7px;border-left-color:var(--accent)}
+.guide::after{right:7px;border-right-color:var(--accent)}
+.count{position:absolute;inset:0;display:grid;place-items:center;background:#070c15d9;color:var(--accent);font-size:clamp(70px,21vw,144px);font-weight:800;pointer-events:none}
+.dock{background:#0c1321;border-top:1px solid var(--line);padding:8px max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+.reader-actions{display:flex;align-items:center;justify-content:center;gap:7px}
+.reader-actions button{padding:0 10px;font-size:14px}
+.reader-actions .primary{min-height:44px;min-width:82px}
+.speed-readout{color:var(--accent);font-size:13px;min-width:58px;text-align:center;font-variant-numeric:tabular-nums}
+.speed-control{display:flex;gap:4px;align-items:center}
+.speed-control button{font-size:20px;min-width:35px}
+.seek{display:flex;align-items:center;gap:10px;max-width:680px;margin:0 auto 5px}
+.seek input{min-height:24px}
+#progress{min-width:38px;text-align:right}
+@media(max-width:720px){
+.shell{padding:0 14px max(14px,env(safe-area-inset-bottom))}
+header{min-height:64px}
+.workspace{grid-template-columns:1fr;gap:12px;margin-top:14px}
+.editor{padding:15px;gap:10px}
+.editor textarea{height:clamp(155px,29dvh,260px);padding:12px 13px}
+.right{gap:10px}
+.preview{display:none}
+.settings{padding:11px 15px;gap:5px}
+.options{padding-top:6px}
+}
+@media(max-width:370px){.reader-actions{gap:4px}.reader-actions button{padding-inline:7px}.speed-readout{min-width:53px}.reader-actions .primary{min-width:70px}}
+@media(max-height:480px) and (orientation:landscape){.reader-head button,.reader-actions button{min-height:38px}.reader-head{padding-block:4px}.seek{margin-bottom:0}.dock{padding-top:2px}}
+
+body{background:radial-gradient(ellipse at 72% -25%,#1b3658 0,transparent 54%),var(--bg);min-height:100dvh}
+.logo{background:linear-gradient(145deg,#acf1ff,#67a7ff);box-shadow:0 0 20px #6bbaff35}
+.panel{background:linear-gradient(155deg,#142035,#0f1726 66%);box-shadow:0 12px 36px #02061144}
+.primary{background:linear-gradient(108deg,#a4eaff,#77bbff);border-color:#a4eaff}
+.setup-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.setup-actions button{width:100%;min-width:0;min-height:50px}
+#start{background:#19253a;border-color:#354c68;color:var(--text)}
+#setupNotice:empty{display:none}
+.reader.recording-mode .reader-head,.reader.recording-mode .dock{background:#0c1321}
+.reader.recording-mode .reader-head{min-height:48px}
+.reader.recording-mode #full{display:none}
+.camera{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scaleX(-1);background:#070c15;pointer-events:none}
+.recording-mode .viewport{position:absolute;top:0;left:50%;transform:translateX(-50%);width:min(100%,730px);height:clamp(150px,56%,410px);max-height:100%;background:linear-gradient(#060a12ed,#060a12ce 76%,#060a12a6);mask-image:linear-gradient(#000 0 92%,transparent);z-index:1}
+.recording-mode .reader-copy{padding-inline:clamp(18px,5.5vw,70px);line-height:1.35;text-shadow:0 1px 4px #000}
+.recording-mode .guide{z-index:1;top:var(--reading-line,36px);left:50%;width:min(100%,730px);transform:translateX(-50%);right:auto}
+.recording-mode .count{z-index:2}
+.record-controls{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;max-width:500px;margin:6px auto 0}
+.record-controls .small{font-variant-numeric:tabular-nums;text-align:right}
+.record-button{background:#432033;border-color:#8d405d;color:#ffb4c8;min-width:124px;min-height:47px}
+.record-button[data-active=true]{background:#9a2c50;border-color:#ff92b1;color:#fff}
+.record-indicator{display:inline-block;width:9px;height:9px;border-radius:50%;background:currentColor}
+.record-button[data-active=true] .record-indicator{border-radius:2px}
+#recordNotice{grid-column:1/-1;margin:0;text-align:center;color:#ffc4d1}
+#recordNotice:empty{display:none}
+.take video{width:100%;max-height:47dvh;display:block;background:#070c15;border-radius:12px;margin-top:14px}
+.take p{margin:9px 0}
+.take-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.take-actions a{display:inline-flex;min-height:44px;align-items:center;border:1px solid var(--line);background:#19253a;border-radius:12px;padding:0 13px;color:var(--text);font-weight:650;text-decoration:none}
+@media(max-height:480px) and (orientation:landscape){.recording-mode .viewport{width:60%;height:80%;left:30%;mask-image:linear-gradient(#000 0 90%,transparent)}.recording-mode .guide{left:30%;width:60%}.record-controls{margin-top:2px}.record-button{min-height:38px}}
+:root{color-scheme:light;--bg:#eff8f7;--card:#fff;--line:#d5e7e7;--text:#142e36;--muted:#526b73;--accent:#006a68;--gradient:linear-gradient(115deg,#205cb9 0%,#0b6c91 52%,#006d5f 100%);font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+body{background:radial-gradient(ellipse at 90% 0%,#d9f3e9 0,transparent 48%),radial-gradient(ellipse at 0 7%,#e0effb 0,transparent 50%),var(--bg)}
+header{border-color:#d5e7e7}
+.logo{background:#212b50;object-fit:cover;box-shadow:none}
+button,select{background:#f3f9f9;color:var(--text);border-color:var(--line)}
+.install{background:#fffc}
+.panel{background:var(--card);box-shadow:0 13px 35px -22px #0c485453}
+.editor{position:relative;overflow:hidden}
+.editor textarea{background:#f5fafb;color:var(--text)}
+.editor textarea::placeholder{color:#576e77}
+.primary{background:var(--gradient);border:0;color:white;box-shadow:0 6px 17px -7px #006a68}
+.primary:hover:not(:disabled){background:var(--gradient);filter:brightness(1.06)}
+#start{color:#005959;background:#e4f5f1;border-color:#c8e7e1}
+.preview-screen{background:linear-gradient(145deg,#15313d,#092027);border-color:#244550;color:#effaf8}
+.preview-screen::after{background:linear-gradient(transparent 57%,#0c222a)}
+.preview-copy:empty::before{color:#bdd9d9}
+.mode-settings{display:grid;gap:10px;font-size:14px}
+.mode-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mode-buttons button{min-width:0;min-height:46px;background:#f3f9f9}
+.mode-buttons button[aria-pressed=true]{color:#005959;background:#e4f5f1;border-color:#9bd1c6;box-shadow:inset 0 0 0 1px #9bd1c6}
+.mode-settings > span{font-weight:720}
+.voice-engines{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.voice-engines button{min-width:0;min-height:38px;font-size:13px;padding-inline:5px}
+.voice-engines button[aria-pressed=true]{color:#005959;background:#e4f5f1;border-color:#9bd1c6}
+.brand{gap:8px;font-size:17px}
+.logo{width:27px;height:27px;border-radius:6px}
+.settings{gap:14px}
+.setup-actions #start{background:var(--gradient);border:0;color:#fff}
+.setup-actions #cameraStart{background:#f3f9f9;color:var(--text);border:1px solid var(--line);box-shadow:none}
+@media(max-width:810px){.workspace{grid-template-columns:1fr}.preview{display:none}}
+@media(max-width:440px){.mode-buttons button,.setup-actions button{font-size:14px}}
+.voice-help{margin:0}
+.reader,.take{color-scheme:dark;--text:#f0faf9;--muted:#b0cdcf;--accent:#80f1d9;--line:#294953;color:var(--text)}
+.reader{background:#071b21}
+.reader-head,.dock,.reader.recording-mode .reader-head,.reader.recording-mode .dock{background:#102b33}
+.reader button,.take button,.take-actions a{background:#163943;color:var(--text);border-color:var(--line)}
+.reader .primary,.take .primary{background:var(--gradient);color:#fff}
+.reader .record-button{color:#a6f5e4;background:#104645;border-color:#368b85}
+.reader .record-button[data-active=true]{color:#fff;background:#a72745;border-color:#ff91a2}
+.guide{border-color:#80f1d980}
+.voice-notice{color:#b8f1e7;text-align:center;margin:6px auto 0}
+.voice-notice:empty{display:none}
+#modeToggle{font-size:12px;padding-inline:8px;min-height:38px}
+.reader #modeToggle[aria-pressed=true]{color:#c1ffef;border-color:#4fac9c}
+dialog{background:#fff;color:var(--text)}
+dialog p{color:var(--muted)}
+dialog.take{background:#102b33}
+@media(max-width:440px){.reader-actions{flex-wrap:wrap}.reader-actions .primary{min-width:72px}.reader-actions button{padding-inline:7px}.reader-actions{gap:5px}}
+@media(max-height:480px) and (orientation:landscape){#modeToggle{min-height:36px}}
+
+.header-actions{display:flex;align-items:center;gap:6px}
+.header-actions button{white-space:nowrap}
+#draftList{display:grid;gap:8px;list-style:none;padding:0;max-height:34dvh;overflow:auto}
+#draftList li{display:grid;gap:4px}
+#draftList button{justify-content:flex-start;text-align:left;overflow-wrap:anywhere}
+#draftText{white-space:pre-wrap;overflow:auto;max-height:26dvh;overflow-wrap:anywhere}
+#draftDetailTitle{min-width:0;overflow-wrap:anywhere}
+#draftRenameForm:not([hidden]){display:grid;gap:8px;margin-top:14px}
+#draftRenameTitle{width:100%;min-width:0;min-height:44px;padding:8px 11px;border:1px solid var(--line);border-radius:12px;background:#163943;color:var(--text);font:inherit}
+#draftRenameForm .take-actions{margin-top:0}
+#draftRenameStatus:empty{display:none}
+.web-footer{display:flex;justify-content:flex-end;margin-top:16px}
+.web-footer a{color:var(--accent);font-size:14px;text-underline-offset:3px}
+#draftsDialog,#draftDetail{max-height:86dvh}
+@media(max-width:375px){.header-actions button{padding-inline:7px;font-size:13px}.editor-foot{gap:5px}.editor-foot .small{font-size:12px}}
+::highlight(prompter-current-line){color:#d7fff1;text-shadow:0 0 7px #5af4d575}
+.voice-line-highlight{position:absolute;z-index:1;pointer-events:none;border-radius:9px;background:#31d4b538;border-inline-start:3px solid #80f1d9;box-shadow:inset 0 0 0 1px #80f1d945}
+.guide{z-index:2}
+.reader.voice-follow .guide{top:var(--reading-line,34%);border-top-color:transparent}
+.count,.recording-mode .count{z-index:3}
+</style>
+</head>
+<body>
+<svg hidden xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="lines" viewBox="0 0 24 24"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4M8 10h8m-8 4h6"/><circle cx="12" cy="4" r="1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="cameraIcon" viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 6-3v10l-6-3"/></symbol>
+<symbol id="install" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></symbol>
+<symbol id="play" viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="pause" viewBox="0 0 24 24"><path d="M9 5v14m6-14v14" stroke-width="3"/></symbol>
+<symbol id="full" viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></symbol>
+</defs></svg>
+<div class="shell" id="setup">
+<header>
+<div class="brand"><img class="logo" src="./bit-study-brand.png" alt="">比特书房提词器</div>
+<div class="header-actions"><button type="button" id="openDrafts">草稿箱</button><button type="button" class="install" id="installButton" hidden>安装应用</button></div>
+</header>
+<main class="workspace">
+<section class="panel editor">
+<div class="panel-head"><h1><label for="script">稿件</label></h1><div class="editor-head-actions"><span class="small" id="length"></span><button type="button" id="clearScript" class="sample" disabled>一键清空</button></div></div>
+<textarea id="script" placeholder="在这里粘贴或输入你的口播稿…" spellcheck="false"></textarea>
+<div class="editor-foot"><span class="small" id="saveState" role="status"></span><div class="header-actions"><input id="scriptFile" type="file" accept=".txt,.md,text/plain" hidden><button type="button" id="openScriptFile" class="sample">导入文本</button><button type="button" id="saveScriptDraft" class="sample" disabled>存稿件</button><button type="button" id="sample" class="sample">填入示例</button></div></div>
+</section>
+<div class="right">
+<section class="panel preview" aria-hidden="true">
+<div class="panel-head"><h2>提词预览</h2></div>
+<div class="preview-screen"><div class="preview-copy" id="preview"></div></div>
+</section>
+<section class="panel settings" aria-label="提词设置">
+<div class="mode-settings" role="group" aria-label="提词方式">
+<span>提词方式</span>
+<div class="mode-buttons"><button type="button" id="voiceMode" aria-pressed="true">语音跟读</button><button type="button" id="speedMode" aria-pressed="false">匀速滚动</button></div>
+</div>
+<div id="voiceEngines" class="voice-engines" role="group" aria-label="跟读引擎" hidden>
+  <button type="button" id="macVoice" aria-pressed="true">Mac 系统识别</button>
+  <button type="button" id="mandarinVoice" aria-pressed="false">本地普通话</button>
+</div>
+<p id="voiceHelp" class="small voice-help" role="status"></p>
+<div class="setting" id="speedSetting"><label for="speed">滚动速度</label><input id="speed" type="range" min="10" max="220" step="5"><output id="speedValue" for="speed"></output></div>
+<div class="setting"><label for="size">字号</label><input id="size" type="range" min="24" max="100" step="2"><output id="sizeValue" for="size"></output></div>
+<div class="options">
+<button type="button" class="toggle" id="mirror" aria-pressed="false">左右镜像</button>
+<label for="delay">开读倒计时<select id="delay"><option value="0">关闭</option><option value="3">3 秒</option><option value="5">5 秒</option></select></label>
+</div>
+</section>
+<div class="setup-actions">
+<button type="button" id="start" class="primary" disabled><svg aria-hidden="true"><use href="#play"/></svg>开始提词</button>
+<button type="button" id="cameraStart" disabled><svg aria-hidden="true"><use href="#cameraIcon"/></svg>录制口播</button>
+</div>
+<div id="setupNotice" class="small" role="status"></div>
+</div>
+</main>
+<footer class="web-footer"><a href="https://github.com/qihang960812-netizen/bitstudy-teleprompter/releases/latest" target="_blank" rel="noopener noreferrer">下载离线包</a></footer>
+</div>
+<section class="reader" id="reader" aria-label="提词界面" hidden>
+<div class="reader-head">
+<button type="button" id="back">‹ 返回稿件</button>
+<span class="small" id="status" role="status"></span>
+<button type="button" id="full" aria-label="切换全屏" title="切换全屏"><svg aria-hidden="true"><use href="#full"/></svg></button>
+</div>
+<div class="reader-stage" id="stage">
+<video class="camera" id="camera" autoplay muted playsinline hidden aria-hidden="true"></video>
+<div class="viewport" id="viewport" aria-label="提词正文" tabindex="0"><div class="reader-copy" id="copy"></div></div>
+<div class="voice-line-highlight" id="voiceLineHighlight" aria-hidden="true" hidden></div>
+<div class="guide" aria-hidden="true"></div>
+<div class="count" id="count" hidden></div>
+</div>
+<div class="dock">
+<div class="seek"><input type="range" id="seek" min="0" max="1000" value="0" aria-label="阅读进度"><span class="small" id="progress">0%</span></div>
+<div class="reader-actions">
+<button type="button" id="reset">回开头</button>
+<button type="button" id="modeToggle" aria-pressed="false" hidden></button>
+<div class="speed-control" id="speedControl">
+<button type="button" id="slower" aria-label="减速">−</button>
+<span class="speed-readout" id="readerSpeed"></span>
+<button type="button" id="faster" aria-label="加速">＋</button>
+</div>
+<button type="button" id="playPause" class="primary"><svg aria-hidden="true"><use id="playIcon" href="#pause"/></svg><span id="playLabel">暂停</span></button>
+</div>
+<p class="small voice-notice" id="voiceNotice" role="status"></p>
+<div class="record-controls" id="recordControls" hidden>
+<span></span>
+<button type="button" class="record-button" id="recordButton"><span class="record-indicator" aria-hidden="true"></span><span id="recordLabel">开始录制</span></button>
+<span class="small" id="recordTime" aria-label="录制时长">00:00</span>
+<p class="small" id="recordNotice" role="status"></p>
+</div>
+</div>
+</section>
+<dialog class="take" id="takeDialog" aria-labelledby="takeTitle">
+<div class="panel-head"><h2 id="takeTitle">录制完成</h2><form method="dialog"><button>关闭</button></form></div>
+<video id="takePreview" controls playsinline preload="metadata"></video>
+<div class="take-actions">
+<button type="button" class="primary" id="shareTake" hidden>保存或分享</button>
+<a id="downloadTake" download>下载视频</a>
+<button type="button" id="saveDraft">存草稿</button>
+<button type="button" id="retake">再录一段</button>
+</div>
+<p class="small" id="takeNotice" role="status"></p>
+</dialog>
+<dialog id="draftsDialog" aria-labelledby="draftsTitle">
+<div class="panel-head"><h2 id="draftsTitle">本机草稿箱</h2><form method="dialog"><button>关闭</button></form></div>
+<p id="draftStatus" class="small" role="status"></p><ul id="draftList"></ul>
+</dialog>
+<dialog id="draftDetail" class="take" aria-labelledby="draftDetailTitle">
+<div class="panel-head"><h2 id="draftDetailTitle"></h2><form method="dialog"><button>关闭</button></form></div>
+<video id="draftVideo" controls playsinline preload="metadata"></video>
+<p id="draftText"></p>
+<div class="take-actions"><button id="useDraft">载入稿件</button><button type="button" id="renameDraft">改名</button><a id="draftDownload" download>下载视频</a><button id="draftShare">保存或分享</button></div>
+<form id="draftRenameForm" hidden>
+<label for="draftRenameTitle">草稿标题</label>
+<input id="draftRenameTitle" type="text" required>
+<div class="take-actions"><button type="submit" id="saveDraftTitle" class="primary">保存标题</button><button type="button" id="cancelDraftRename">取消</button></div>
+<p id="draftRenameStatus" class="small" role="status"></p>
+</form>
+<p id="draftDetailStatus" class="small" role="status"></p>
+</dialog>
+<dialog id="installDialog" aria-labelledby="installTitle">
+<div class="panel-head"><h2 id="installTitle">安装比特书房提词器</h2><form method="dialog"><button aria-label="关闭">关闭</button></form></div>
+<p><strong>iPhone</strong>　用 Safari 打开此页面，轻点「分享」→「添加到主屏幕」。如看到「作为网页 App 打开」，请开启它。</p>
+<p><strong>电脑或 Android</strong>　用 Chrome 或 Edge 打开此页面，在浏览器菜单里选择安装应用。</p>
+<p class="small" id="offlineState" role="status"></p>
+</dialog>
+<script src="./follow.js"></script>
+<script>
+'use strict';
+const byId = (id) => document.getElementById(id);
+const script = byId('script');
+const clearScript = byId('clearScript');
+const speed = byId('speed');
+const size = byId('size');
+const delay = byId('delay');
+const mirror = byId('mirror');
+const setup = byId('setup');
+const reader = byId('reader');
+const stage = byId('stage');
+const viewport = byId('viewport');
+const copy = byId('copy');
+const count = byId('count');
+const seek = byId('seek');
+const storageKey = 'qing-prompter-v1';
+const standalone = matchMedia('(display-mode: standalone)');
+let preferences = {};
+try { preferences = JSON.parse(localStorage.getItem(storageKey)) ?? {}; } catch {}
+script.value = typeof preferences.text === 'string' ? preferences.text : '';
+let savedText = script.value;
+let savedPlace = preferences.place ?? null;
+let placeTimer = 0;
+speed.value = preferences.speed ?? 45;
+size.value = preferences.size ?? 42;
+delay.value = ['0', '3', '5'].includes(String(preferences.delay)) ? preferences.delay : '3';
+mirror.setAttribute('aria-pressed', String(preferences.mirror === true));
+
+let phase = 'paused';
+let frame = 0;
+let lastTime = 0;
+let deadline = 0;
+let position = 0;
+let wakeLock = null;
+let waking = false;
+let installPrompt = null;
+let offlineReady = false;
+const camera = byId('camera');
+const cameraStart = byId('cameraStart');
+const recordButton = byId('recordButton');
+const takeDialog = byId('takeDialog');
+const takePreview = byId('takePreview');
+const downloadTake = byId('downloadTake');
+const shareTake = byId('shareTake');
+const canRecord = Boolean(navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
+let cameraMode = false;
+let openingCamera = false;
+let stream = null;
+let recording = null;
+let armTimer = 0;
+let clockTimer = 0;
+let take = null;
+let hadOfflineError = false;
+const AudioEngine = window.AudioContext || window.webkitAudioContext;
+const offlineVoiceSupported = Boolean(AudioEngine && window.AudioWorkletNode && window.Worker &&
+  window.WebAssembly && window.indexedDB && navigator.mediaDevices?.getUserMedia);
+const nativeSpeech = window.prompterDesktop?.nativeSpeech;
+const voiceSupported = offlineVoiceSupported || Boolean(nativeSpeech && AudioEngine && window.AudioWorkletNode && navigator.mediaDevices?.getUserMedia);
+let nativeFailed = false;
+let preferMandarinVoice = offlineVoiceSupported && (!nativeSpeech || preferences.voiceEngine === 'mandarin');
+let voiceMode = Boolean(voiceSupported && (preferences.voice ?? true));
+let voiceScript = [];
+let voiceLetters = [];
+let voiceCursor = 0;
+let lastVoiceScroll = -1;
+let voiceScrollFrame = 0;
+let voiceScrollTarget = 0;
+let voiceScrollPosition = 0;
+let voiceScrollTime = 0;
+let voiceScrollRate = 0;
+let readingLine = 0;
+let highlightedVoiceCursor = -1;
+byId('voiceMode').disabled = !voiceSupported;
+
+function save() {
+  if (script.value !== savedText) {
+    savedText = script.value;
+    savedPlace = null;
+  }
+  try {
+    localStorage.setItem(storageKey, JSON.stringify({
+      text: script.value, speed: Number(speed.value), size: Number(size.value),
+      delay: Number(delay.value), mirror: isMirrored(), voice:voiceMode,
+      voiceEngine:preferMandarinVoice ? 'mandarin' : 'mac', place:savedPlace
+    }));
+    byId('saveState').textContent = '已保存在此设备';
+  } catch {
+    byId('saveState').textContent = '无法保存稿件';
+  }
+}
+function isMirrored() { return mirror.getAttribute('aria-pressed') === 'true'; }
+function renderSetup() {
+  byId('length').textContent = Array.from(script.value.trim()).length + ' 字';
+  clearScript.disabled = script.value.length === 0;
+  const cannotStart = !script.value.trim() || openingCamera;
+  byId('start').disabled = cannotStart;
+  byId('start').lastChild.textContent = (savedPlace ? '继续' : '开始') + (voiceMode ? '跟读' : '提词');
+  cameraStart.disabled = cannotStart;
+  byId('saveScriptDraft').disabled = !script.value.trim();
+  byId('sample').disabled = Boolean(script.value.trim());
+  byId('preview').textContent = script.value.slice(0, 1500);
+  byId('preview').style.fontSize = Math.min(Number(size.value) * 0.7, 58) + 'px';
+  byId('preview').style.transform = isMirrored() ? 'scaleX(-1)' : '';
+  copy.style.fontSize = (cameraMode ? 'min(' + Math.round(Number(size.value) * 1.1) + 'px, 12vw, 10dvh)' : size.value + 'px');
+  copy.style.transform = isMirrored() && !cameraMode ? 'scaleX(-1)' : '';
+  byId('sizeValue').textContent = size.value + ' px';
+  byId('speedValue').textContent = speed.value + ' px/秒';
+  byId('readerSpeed').textContent = speed.value + ' px/秒';
+  byId('slower').disabled = Number(speed.value) <= Number(speed.min);
+  byId('faster').disabled = Number(speed.value) >= Number(speed.max);
+}
+function updateSetup() { save(); renderSetup(); }
+for (const input of [script, speed, size]) input.addEventListener('input', updateSetup);
+clearScript.addEventListener('click', () => {
+  script.focus();
+  script.select();
+  // Delete through the editor so the user can undo the clear with Command-Z.
+  document.execCommand('delete');
+  if (script.value !== '') {
+    script.value = '';
+    updateSetup();
+  }
+});
+delay.addEventListener('change', updateSetup);
+mirror.addEventListener('click', () => {
+  mirror.setAttribute('aria-pressed', String(!isMirrored()));
+  updateSetup();
+});
+byId('sample').addEventListener('click', () => {
+  script.value = '大家好，欢迎来到今天的分享。\n\n这是一段示例稿件。你可以把自己的口播稿粘贴到这里，再按「开始提词」。\n\n眼睛可以看向两侧蓝色标记所在的那一行。跟着字幕读，读到一句话的末尾时，给自己留一点停顿。\n\n想慢一点，就点减号。需要重来，可以点「回开头」，也可以拖动进度条，从任意位置继续。\n\n准备好了，我们开始吧。';
+  updateSetup();
+});
+byId('openScriptFile').addEventListener('click', () => byId('scriptFile').click());
+byId('scriptFile').addEventListener('change', async event => {
+  const input = event.currentTarget;
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+  const notice = byId('setupNotice');
+  try {
+    if (file.size > 1_000_000) {
+      notice.textContent = '请选择 1 MB 以内的文本文件。';
+      return;
+    }
+    const text = new TextDecoder('utf-8', {fatal:true}).decode(await file.arrayBuffer());
+    if (!text.trim()) {
+      notice.textContent = '这份文本没有内容。';
+      return;
+    }
+    if (script.value.trim() && script.value !== text && !confirm('用导入的文本替换当前稿件？')) return;
+    script.value = text;
+    updateSetup();
+    notice.textContent = '已导入 ' + file.name;
+  } catch {
+    notice.textContent = '无法读取文件。请保存为 UTF-8 文本后再试。';
+  }
+});
+
+
+function maxScroll() { return Math.max(0, viewport.scrollHeight - viewport.clientHeight); }
+function savePlace() {
+  clearTimeout(placeTimer);
+  placeTimer = 0;
+  if (reader.hidden) return;
+  const fraction = maxScroll() ? viewport.scrollTop / maxScroll() : 0;
+  const cursor = voiceMode && viewport.scrollTop === lastVoiceScroll ? voiceCursor : voiceIndexAtScroll();
+  if (phase === 'ended' || (!fraction && !cursor)) savedPlace = null;
+  else savedPlace = {fraction, cursor, camera:cameraMode};
+  save();
+}
+function checkpointPlace() {
+  if (!placeTimer) placeTimer = setTimeout(savePlace, 850);
+}
+function renderProgress() {
+  const maximum = maxScroll();
+  const fraction = maximum ? Math.min(1, Math.max(0, viewport.scrollTop / maximum)) : 0;
+  seek.value = Math.round(fraction * 1000);
+  byId('progress').textContent = Math.round(fraction * 100) + '%';
+}
+function layoutCopy() {
+  if (reader.hidden) return;
+  const height = viewport.clientHeight;
+  highlightedVoiceCursor = -1;
+  readingLine = Math.round(height * (voiceMode ? 0.34 : cameraMode ? 0.15 : 0.32));
+  const lineHeight = parseFloat(getComputedStyle(copy).lineHeight) || 64;
+  const halfLine = voiceMode ? lineHeight / 2 : 0;
+  copy.style.paddingTop = Math.max(0, readingLine - halfLine) + 'px';
+  copy.style.paddingBottom = Math.max(0, height - readingLine - halfLine + (voiceMode ? 3 : 0)) + 'px';
+  stage.style.setProperty('--reading-line', readingLine + 'px');
+  voiceScrollRate = Math.max(170, lineHeight * 3.4);
+  reader.classList.toggle('voice-follow', voiceMode);
+}
+function setPhase(next) {
+  cancelAnimationFrame(frame);
+  const wasActive = phase === 'playing' || phase === 'counting';
+  phase = next;
+  lastTime = 0;
+  const active = phase === 'playing' || phase === 'counting';
+  count.hidden = phase !== 'counting';
+  byId('playLabel').textContent = active ? '暂停' : phase === 'ended' ? '从头开始' : voiceMode ? '继续跟读' : '继续提词';
+  byId('playPause').disabled = Boolean(armTimer);
+  byId('playIcon').setAttribute('href', active ? '#pause' : '#play');
+  byId('status').textContent = {
+    counting: '准备开读', playing: voiceMode ? (speechAudio?.listening ? '正在聆听' : '正在启动本机识别…') : '提词中', paused: '已暂停', ended: '已读完'
+  }[phase];
+  if (phase === 'playing' && voiceMode) {
+    if (!wasActive && !speechAudio && viewport.scrollTop !== lastVoiceScroll) voiceCursor = voiceIndexAtScroll();
+    renderVoiceLine();
+    startVoice();
+  } else if (!active) {
+    cancelVoiceScroll();
+    renderVoiceLine();
+    stopVoice();
+  }
+  if (phase === 'counting' || (phase === 'playing' && !voiceMode)) frame = requestAnimationFrame(tick);
+  if (phase === 'paused' || phase === 'ended') savePlace();
+}
+function tick(now) {
+  if (phase === 'counting') {
+    const seconds = Math.ceil((deadline - now) / 1000);
+    if (seconds <= 0) {
+      position = viewport.scrollTop;
+      setPhase('playing');
+      return;
+    }
+    count.textContent = seconds;
+  } else if (phase === 'playing') {
+    if (lastTime) {
+      const maximum = maxScroll();
+      position = Math.min(maximum, position + Number(speed.value) * Math.min(0.05, (now - lastTime) / 1000));
+      viewport.scrollTop = position;
+      renderProgress();
+      if (position >= maximum) {
+        setPhase('ended');
+        return;
+      }
+    }
+    lastTime = now;
+  }
+  frame = requestAnimationFrame(tick);
+}
+function begin() {
+  const seconds = Number(delay.value);
+  position = viewport.scrollTop;
+  if (!seconds) {
+    setPhase('playing');
+    return;
+  }
+  count.textContent = seconds;
+  deadline = performance.now() + seconds * 1000;
+  setPhase('counting');
+  if (voiceMode) startVoice();
+}
+function togglePlayback() {
+  if (armTimer) return;
+  if (phase === 'playing' || phase === 'counting') {
+    setPhase('paused');
+  } else if (phase === 'ended' || viewport.scrollTop >= maxScroll() - 1) {
+    restart();
+  } else {
+    position = viewport.scrollTop;
+    setPhase('playing');
+  }
+}
+function restart() {
+  if (armTimer) return;
+  cancelVoiceScroll();
+  if (voiceMode && speechAudio) stopVoice();
+  voiceCursor = 0;
+  lastVoiceScroll = -1;
+  viewport.scrollTop = 0;
+  savePlace();
+  renderProgress();
+  if (cameraMode) {
+    position = 0;
+    setPhase(recording ? 'playing' : 'paused');
+  } else {
+    begin();
+  }
+}
+async function keepAwake() {
+  if (!('wakeLock' in navigator) || document.hidden || wakeLock || waking || reader.hidden) return;
+  waking = true;
+  try {
+    const lock = await navigator.wakeLock.request('screen');
+    if (reader.hidden || document.hidden) {
+      await lock.release();
+      return;
+    }
+    wakeLock = lock;
+    lock.addEventListener('release', () => { if (wakeLock === lock) wakeLock = null; });
+  } catch {} finally { waking = false; }
+}
+function openReader(withCamera, resume = true) {
+  if (!script.value.trim()) return;
+  cameraMode = withCamera;
+  save();
+  renderSetup();
+  copy.textContent = script.value.trim();
+  voiceScript = voiceCharacters(copy.textContent);
+  voiceLetters = voiceScript.map(item => item.unit);
+  byId('voiceNotice').textContent = '';
+  reader.classList.toggle('recording-mode', cameraMode);
+  byId('recordControls').hidden = !cameraMode;
+  camera.hidden = !cameraMode;
+  reader.hidden = false;
+  setup.hidden = true;
+  document.body.classList.add('reading');
+  layoutCopy();
+  if (resume && savedPlace) {
+    voiceCursor = Math.max(0, Math.min(voiceScript.length, Number(savedPlace.cursor) || 0));
+    const fraction = Math.max(0, Math.min(1, Number(savedPlace.fraction) || 0));
+    viewport.scrollTop = voiceMode || savedPlace.camera !== cameraMode
+      ? (voiceCursor ? voiceLine(voiceCursor) : maxScroll() * fraction)
+      : maxScroll() * fraction;
+    position = viewport.scrollTop;
+    lastVoiceScroll = viewport.scrollTop;
+    setPhase('paused');
+    if (!withCamera && voiceMode) setPhase('playing');
+    else byId('status').textContent = '已恢复上次进度';
+    renderProgress();
+  } else {
+    restart();
+  }
+  viewport.focus({preventScroll:true});
+  window.prompterDesktop?.setSessionActive(true);
+  keepAwake();
+}
+byId('start').addEventListener('click', () => openReader(false));
+function leave() {
+  if (reader.hidden || savingDraft) return;
+  if (cameraMode && recording) {
+    byId('recordNotice').textContent = '请先点「结束录制」，视频保存后再返回。';
+    return;
+  }
+  cancelArming();
+  if (cameraMode && take && !take.exported && !take.saved &&
+      !window.confirm('这段视频还没保存。确定返回稿件并丢弃视频？')) return;
+  if (cameraMode) {
+    closeCamera();
+    clearTake();
+  }
+  const finished = phase === 'ended';
+  setPhase('paused');
+  if (finished) {
+    savedPlace = null;
+    save();
+  }
+  window.prompterDesktop?.setSessionActive(false);
+  if (document.fullscreenElement === reader) document.exitFullscreen().catch(() => {});
+  wakeLock?.release().catch(() => {});
+  reader.hidden = true;
+  setup.hidden = false;
+  document.body.classList.remove('reading');
+  (cameraMode ? cameraStart : byId('start')).focus({preventScroll:true});
+  cameraMode = false;
+  renderSetup();
+}
+byId('back').addEventListener('click', leave);
+byId('full').hidden = !document.fullscreenEnabled || standalone.matches;
+byId('full').addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await reader.requestFullscreen();
+  } catch {
+    byId('status').textContent = '当前浏览器无法切换全屏';
+  }
+});
+byId('reset').addEventListener('click', restart);
+byId('playPause').addEventListener('click', togglePlayback);
+function adjustSpeed(step) {
+  speed.value = Number(speed.value) + step * Number(speed.step);
+  updateSetup();
+}
+byId('slower').addEventListener('click', () => adjustSpeed(-1));
+byId('faster').addEventListener('click', () => adjustSpeed(1));
+seek.addEventListener('input', () => {
+  if (armTimer) return;
+  const target = maxScroll() * Number(seek.value) / 1000;
+  setPhase('paused');
+  viewport.scrollTop = target;
+  renderProgress();
+});
+viewport.addEventListener('scroll', () => {
+  renderProgress();
+  renderVoiceLine();
+  checkpointPlace();
+}, {passive:true});
+viewport.addEventListener('wheel', () => {
+  if (!armTimer && (phase === 'playing' || phase === 'counting')) setPhase('paused');
+}, {passive:true});
+let pointerOrigin = null;
+let panned = false;
+viewport.addEventListener('pointerdown', (event) => {
+  pointerOrigin = event.clientY;
+  panned = false;
+});
+viewport.addEventListener('pointermove', (event) => {
+  if (pointerOrigin === null || Math.abs(event.clientY - pointerOrigin) < 8) return;
+  panned = true;
+  if (!armTimer && (phase === 'playing' || phase === 'counting')) setPhase('paused');
+});
+viewport.addEventListener('pointercancel', () => {
+  pointerOrigin = null;
+  panned = true;
+  if (!armTimer && (phase === 'playing' || phase === 'counting')) setPhase('paused');
+});
+viewport.addEventListener('pointerup', () => { pointerOrigin = null; });
+viewport.addEventListener('click', () => {
+  if (!panned && !window.getSelection()?.toString()) togglePlayback();
+});
+document.addEventListener('keydown', (event) => {
+  if (reader.hidden || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (takeDialog.open) return;
+  if (event.key === 'Escape' && !document.fullscreenElement) {
+    if (armTimer) cancelArming();
+    else if (phase === 'playing' || phase === 'counting') setPhase('paused');
+    return;
+  }
+  if (event.target.closest('input, button')) return;
+  if (event.code === 'Space') {
+    event.preventDefault();
+    togglePlayback();
+  }
+  if (event.key === 'ArrowRight') adjustSpeed(1);
+  if (event.key === 'ArrowLeft') adjustSpeed(-1);
+  if (!armTimer && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) setPhase('paused');
+});
+new ResizeObserver(() => {
+  layoutCopy();
+  position = viewport.scrollTop;
+  renderProgress();
+  cancelVoiceScroll();
+  if (voiceMode && phase === 'playing' && voiceCursor > 0) followVoiceCursor();
+  renderVoiceLine();
+}).observe(stage);
+document.addEventListener('visibilitychange', () => {
+  if (reader.hidden) return;
+  if (document.hidden) savePlace();
+  else keepAwake();
+});
+
+function closeCamera() {
+  const closing = stream;
+  stream = null;
+  camera.srcObject = null;
+  closing?.getTracks().forEach(track => track.stop());
+}
+function cameraMessage(error) {
+  if (error.name === 'NotAllowedError' || error.name === 'SecurityError') {
+    return '请在浏览器的网站权限和系统设置中允许访问摄像头和麦克风。';
+  }
+  if (error.name === 'NotFoundError' || error.name === 'OverconstrainedError') {
+    return '未检测到摄像头或麦克风。';
+  }
+  return '无法打开摄像头或麦克风，请关闭正在使用它们的应用后重试。';
+}
+async function enableCamera({retake = false} = {}) {
+  if (openingCamera) return;
+  const inReader = !reader.hidden;
+  const notice = byId(retake ? 'takeNotice' : inReader ? 'recordNotice' : 'setupNotice');
+  notice.textContent = '';
+  if (!canRecord) {
+    notice.textContent = '当前无法录制，请重新打开比特书房提词器。';
+    return;
+  }
+  openingCamera = true;
+  renderSetup();
+  renderRecordControls();
+  notice.textContent = '正在打开摄像头和麦克风…';
+  try {
+    const acquired = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: {ideal:'user'},
+        width: {ideal:1080}, height: {ideal:1920},
+        frameRate: {ideal:30, max:30}
+      },
+      audio: true
+    });
+    if (inReader && reader.hidden) {
+      acquired.getTracks().forEach(track => track.stop());
+      return;
+    }
+    closeCamera();
+    stream = acquired;
+    if (stream.getVideoTracks()[0]?.getSettings().facingMode === 'environment') {
+      throw new DOMException('Front camera unavailable', 'NotFoundError');
+    }
+    for (const track of stream.getTracks()) {
+      track.addEventListener('ended', () => {
+        if (!stream?.getTracks().includes(track)) return;
+        cancelArming();
+        if (recording) finishRecording('摄像头或麦克风断开。已保留本次录制可用的部分。');
+        else setPhase('paused');
+        closeCamera();
+        byId('recordNotice').textContent = '摄像头或麦克风已断开，可重新开启设备。';
+        renderRecordControls();
+      });
+    }
+    if (retake) {
+      takeDialog.close();
+      clearTake();
+    }
+    camera.srcObject = stream;
+    byId('recordNotice').textContent = '';
+    byId('recordTime').textContent = '00:00';
+    notice.textContent = '';
+    openReader(true, !retake);
+    if (reader.hidden) closeCamera();
+    else camera.play().catch(() => {});
+    renderRecordControls();
+  } catch (error) {
+    closeCamera();
+    notice.textContent = cameraMessage(error);
+  } finally {
+    openingCamera = false;
+    renderSetup();
+    renderRecordControls();
+  }
+}
+cameraStart.addEventListener('click', () => enableCamera());
+byId('retake').addEventListener('click', () => {
+  if (!take || openingCamera || savingDraft) return;
+  if (!take.exported && !take.saved && !window.confirm('这段视频还没保存。确定开始新录制并丢弃这段视频？')) return;
+  enableCamera({retake:true});
+});
+
+function renderRecordControls() {
+  const label = armTimer ? '取消倒计时' : recording?.stopping ? '正在生成…'
+    : recording ? '结束录制' : take ? '查看视频' : stream ? '开始录制' : '重新开启设备';
+  byId('recordLabel').textContent = label;
+  recordButton.dataset.active = String(Boolean(recording));
+  recordButton.disabled = openingCamera || Boolean(recording?.stopping);
+  for (const control of [seek, byId('reset'), byId('playPause'), byId('modeToggle')]) control.disabled = Boolean(armTimer);
+}
+function clearTake() {
+  if (!take) return;
+  takePreview.pause();
+  takePreview.removeAttribute('src');
+  takePreview.load();
+  downloadTake.removeAttribute('href');
+  URL.revokeObjectURL(take.url);
+  take = null;
+}
+function showTake() {
+  byId('takeTitle').textContent = take.message ? '录制已停止' : '录制完成';
+  saveDraftButton.disabled = Boolean(take.saved || savingDraft);
+  saveDraftButton.textContent = take.saved ? '已存草稿' : '存草稿';
+  byId('takeNotice').textContent = [take.message, take.saved ? '视频和稿件已存到本机草稿箱。'
+    : savingDraft ? '正在保存到本机草稿箱…' : '未能自动存入草稿箱，请下载视频或重试保存。'].filter(Boolean).join(' ');
+  if (!takeDialog.open) takeDialog.showModal();
+}
+function updateRecordTime(started) {
+  const seconds = Math.floor((performance.now() - started) / 1000);
+  byId('recordTime').textContent = [Math.floor(seconds / 60), seconds % 60]
+    .map(value => String(value).padStart(2, '0')).join(':');
+}
+function finishRecording(message = '') {
+  if (!recording || recording.stopping) return;
+  recording.stopping = true;
+  recording.message = message;
+  clearInterval(clockTimer);
+  setPhase('paused');
+  renderRecordControls();
+  if (recording.recorder.state !== 'inactive') recording.recorder.stop();
+}
+function createRecorder() {
+  const formats = ['video/mp4;codecs=avc1.42001f,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  for (const mimeType of formats) {
+    if (!MediaRecorder.isTypeSupported?.(mimeType)) continue;
+    try { return new MediaRecorder(stream, {mimeType, videoBitsPerSecond:4_000_000}); } catch {}
+  }
+  return new MediaRecorder(stream, {videoBitsPerSecond:4_000_000});
+}
+function startRecording() {
+  if (!stream || document.hidden) {
+    setPhase('paused');
+    renderRecordControls();
+    return;
+  }
+  byId('recordNotice').textContent = '';
+  try {
+    const recorder = createRecorder();
+    const chunks = [];
+    const draft = makeDraft(copy.textContent);
+    const active = {recorder, stopping:false, message:'', draft, writes:Promise.resolve(), checkpointFailed:false};
+    recorder.addEventListener('dataavailable', event => {
+      if (!event.data.size) return;
+      const sequence = chunks.push(event.data) - 1;
+      active.writes = active.writes.then(async () => {
+        if (active.checkpointFailed) return;
+        await checkpointRecording(draft.id, sequence, event.data);
+      }).catch(() => {
+        active.checkpointFailed = true;
+        byId('recordNotice').textContent = '无法写入录制备份，请留意可用空间。';
+      });
+    });
+    recorder.addEventListener('error', () => finishRecording('录制被中断，请检查这段视频。'));
+    recorder.addEventListener('stop', async () => {
+      clearInterval(clockTimer);
+      if (!active.stopping) finishRecording('录制设备停止了采集，请检查这段视频。');
+      closeCamera();
+      await active.writes;
+      try {
+        if (!chunks.length) {
+          await clearRecording(draft.id);
+          byId('recordNotice').textContent = '这次录制没有生成视频。请重新开启设备再试。';
+          return;
+        }
+        const file = recordingFile(draft, chunks, recorder.mimeType);
+        draft.file = file;
+        take = {file, url:URL.createObjectURL(file), exported:false, saved:false, draft, message:active.message};
+        takePreview.src = take.url;
+        downloadTake.href = take.url;
+        downloadTake.download = file.name;
+        shareTake.hidden = !navigator.canShare?.({files:[file]});
+        savingDraft = true;
+        showTake();
+        await writeDraft(draft, true);
+        take.saved = true;
+        byId('recordNotice').textContent = '已保存到本机草稿箱。';
+      } catch {
+        byId('recordNotice').textContent = take ? '未能自动保存，请下载视频或在预览窗口重试。'
+          : '无法保存本次录制，请检查可用空间。';
+      } finally {
+        savingDraft = false;
+        recording = null;
+        renderRecordControls();
+        if (take && takeDialog.open) showTake();
+      }
+    }, {once:true});
+    recorder.start(1000);
+    recording = active;
+    active.writes = addRecording(draft, recorder.mimeType).catch(() => {
+      active.checkpointFailed = true;
+      byId('recordNotice').textContent = '无法创建录制备份，请留意可用空间。';
+    });
+    viewport.focus({preventScroll:true});
+    const started = performance.now();
+    updateRecordTime(started);
+    clockTimer = setInterval(() => updateRecordTime(started), 250);
+    position = viewport.scrollTop;
+    setPhase('playing');
+  } catch {
+    setPhase('paused');
+    byId('recordNotice').textContent = '无法开始录制，请重新打开比特书房提词器后重试。';
+  }
+  renderRecordControls();
+}
+function cancelArming() {
+  if (!armTimer) return;
+  clearInterval(armTimer);
+  armTimer = 0;
+  setPhase('paused');
+  renderRecordControls();
+}
+function armRecording() {
+  const seconds = Number(delay.value);
+  if (!seconds) {
+    startRecording();
+    return;
+  }
+  setPhase('paused');
+  voiceCursor = voiceIndexAtScroll();
+  const readyAt = performance.now() + seconds * 1000;
+  count.textContent = seconds;
+  count.hidden = false;
+  byId('status').textContent = '准备录制';
+  armTimer = setInterval(() => {
+    const left = Math.ceil((readyAt - performance.now()) / 1000);
+    if (left > 0) {
+      count.textContent = left;
+      return;
+    }
+    clearInterval(armTimer);
+    armTimer = 0;
+    startRecording();
+  }, 75);
+  if (voiceMode) startVoice();
+  renderRecordControls();
+}
+recordButton.addEventListener('click', () => {
+  if (armTimer) cancelArming();
+  else if (recording) finishRecording();
+  else if (take) showTake();
+  else if (!stream) enableCamera();
+  else armRecording();
+});
+downloadTake.addEventListener('click', () => {
+  if (!take) return;
+  take.exported = true;
+  byId('takeNotice').textContent = '已发起下载，可在浏览器的下载列表中查看。';
+});
+shareTake.addEventListener('click', async () => {
+  if (!take) return;
+  const current = take;
+  try {
+    await navigator.share({files:[current.file]});
+    current.exported = true;
+  } catch (error) {
+    if (error.name !== 'AbortError') byId('takeNotice').textContent = '系统分享未完成，可以点「下载视频」。';
+  }
+});
+window.addEventListener('beforeunload', event => {
+  savePlace();
+  if (!recording && (!take || take.exported || take.saved)) return;
+  byId('recordNotice').textContent = recording ? '请先结束录制，等视频保存后再关闭窗口。'
+    : '请先保存或下载视频，再关闭窗口。';
+  event.preventDefault();
+  event.returnValue = true;
+});
+
+function voiceRange(index) {
+  const node = copy.firstChild;
+  const entry = voiceScript[Math.min(index, voiceScript.length - 1)];
+  if (!node || !entry) return null;
+  const range = document.createRange();
+  range.setStart(node, entry.offset);
+  range.setEnd(node, entry.end);
+  return range;
+}
+function voiceLine(index) {
+  const range = voiceRange(index);
+  if (!range) return 0;
+  const bounds = range.getBoundingClientRect();
+  const visibleTop = viewport.getBoundingClientRect().top;
+  return viewport.scrollTop + bounds.top - visibleTop +
+    (voiceMode ? bounds.height / 2 - readingLine : -parseFloat(copy.style.paddingTop));
+}
+function voiceIndexAtScroll() {
+  let low = 0;
+  let high = voiceScript.length;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (voiceLine(middle) < viewport.scrollTop - 2) low = middle + 1;
+    else high = middle;
+  }
+  return Math.min(low, Math.max(0, voiceScript.length - 1));
+}
+function highlightVoiceText(range) {
+  if (!window.Highlight || !CSS.highlights || highlightedVoiceCursor === voiceCursor) return;
+  highlightedVoiceCursor = voiceCursor;
+  const top = range.getBoundingClientRect().top;
+  let start = Math.min(voiceCursor, voiceScript.length - 1);
+  let end = start;
+  while (start > 0 && Math.abs(voiceRange(start - 1).getBoundingClientRect().top - top) < 2) start--;
+  while (end + 1 < voiceScript.length && Math.abs(voiceRange(end + 1).getBoundingClientRect().top - top) < 2) end++;
+  range.setStart(copy.firstChild, voiceScript[start].offset);
+  range.setEnd(copy.firstChild, voiceScript[end].end);
+  CSS.highlights.set('prompter-current-line', new Highlight(range));
+}
+function renderVoiceLine() {
+  const highlight = byId('voiceLineHighlight');
+  if (!voiceMode || phase !== 'playing' || reader.hidden) {
+    highlight.hidden = true;
+    highlightedVoiceCursor = -1;
+    CSS.highlights?.delete('prompter-current-line');
+    return;
+  }
+  const range = voiceRange(voiceCursor);
+  if (!range) {
+    highlight.hidden = true;
+    highlightedVoiceCursor = -1;
+    CSS.highlights?.delete('prompter-current-line');
+    return;
+  }
+  const line = range.getBoundingClientRect();
+  highlightVoiceText(range);
+  const bounds = viewport.getBoundingClientRect();
+  const stageBounds = stage.getBoundingClientRect();
+  const top = Math.max(bounds.top, line.top - 4);
+  const bottom = Math.min(bounds.bottom, line.bottom + 4);
+  const inset = Math.max(8, parseFloat(getComputedStyle(copy).paddingLeft) - 8);
+  highlight.hidden = bottom <= top;
+  highlight.style.left = (bounds.left - stageBounds.left + inset) + 'px';
+  highlight.style.width = (bounds.width - inset * 2) + 'px';
+  highlight.style.top = (top - stageBounds.top) + 'px';
+  highlight.style.height = Math.max(0, bottom - top) + 'px';
+}
+function cancelVoiceScroll() {
+  cancelAnimationFrame(voiceScrollFrame);
+  voiceScrollFrame = 0;
+}
+function moveVoiceScroll(now) {
+  const elapsed = Math.min(34, Math.max(0, now - voiceScrollTime));
+  voiceScrollTime = now;
+  voiceScrollPosition = Math.min(voiceScrollTarget, voiceScrollPosition + voiceScrollRate * elapsed / 1000);
+  viewport.scrollTop = voiceScrollPosition;
+  lastVoiceScroll = viewport.scrollTop;
+  voiceScrollFrame = voiceScrollPosition < voiceScrollTarget ? requestAnimationFrame(moveVoiceScroll) : 0;
+  if (!voiceScrollFrame && voiceCursor >= voiceScript.length) setPhase('ended');
+}
+function followVoiceCursor() {
+  const destination = Math.round(voiceLine(voiceCursor));
+  voiceScrollTarget = Math.min(maxScroll(), Math.max(viewport.scrollTop, destination));
+  if (voiceScrollFrame) return;
+  if (voiceScrollTarget <= viewport.scrollTop) {
+    if (voiceCursor >= voiceScript.length) setPhase('ended');
+    return;
+  }
+  voiceScrollPosition = viewport.scrollTop;
+  voiceScrollTime = performance.now();
+  voiceScrollFrame = requestAnimationFrame(moveVoiceScroll);
+}
+function followResult(transcript, final, session) {
+  if (phase !== 'playing' || !voiceMode || !voiceScript.length) return;
+  if (transcript.trim()) byId('status').textContent = '本机跟读中';
+  if (transcript && transcript !== session.transcript) {
+    const next = matchVoice(voiceLetters, transcript, session.anchor, voiceCursor);
+    if (next > voiceCursor) {
+      voiceCursor = next;
+      lastVoiceScroll = viewport.scrollTop;
+      followVoiceCursor();
+      renderVoiceLine();
+    }
+    session.transcript = transcript;
+  }
+  if (final) {
+    session.anchor = voiceCursor;
+    session.transcript = '';
+  }
+}
+const speechAsset = name => new URL('./speech/' + name, location.href).href;
+let modelWorker = null;
+let modelLoading = null;
+let nextRecognizer = 0;
+let speechAudio = null;
+
+function renderVoicePack() {
+  const help = byId('voiceHelp');
+  help.hidden = !voiceMode && voiceSupported;
+  help.textContent = modelLoading ? '正在加载内置普通话模型…'
+    : modelWorker ? '普通话模型已就绪，语音在本机识别。'
+    : voiceSupported ? '首次跟读加载约 45 MB 普通话模型，语音在本机识别。'
+    : '语音跟读需要支持麦克风的浏览器，请使用 HTTPS 或本地启动。';
+}
+async function downloadVoicePart(part) {
+  const response = await fetch(speechAsset('mandarin-' + part + '.bin'));
+  if (!response.ok) throw new Error('无法读取内置普通话包');
+  return response.arrayBuffer();
+}
+function prepareVoiceModel() {
+  if (modelLoading) return modelLoading;
+  if (modelWorker) return Promise.resolve(modelWorker);
+  modelLoading = (async () => {
+    if (!offlineVoiceSupported) throw new Error('unsupported');
+    const engine = await fetch(speechAsset('vosk-local-v2.js'));
+    if (!engine.ok) throw new Error('语音引擎下载失败');
+    const engineUrl = URL.createObjectURL(new Blob([await engine.text()], {type:'text/javascript'}));
+    const worker = new Worker(engineUrl);
+    worker.addEventListener('message', () => URL.revokeObjectURL(engineUrl), {once:true});
+    try {
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('model load timeout')), 360000);
+        const finish = callback => value => { clearTimeout(timer); callback(value); };
+        const failed = finish(reject);
+        worker.onerror = event => failed(new Error(event.message || '语音引擎无法启动'));
+        worker.onmessageerror = () => failed(new Error('语音引擎通信失败'));
+        worker.onmessage = ({data}) => {
+          if (data.event === 'requestPart') {
+            const part = data.part;
+            byId('voiceHelp').textContent = '正在读取普通话包 ' + (part + 1) + '/3…';
+            downloadVoicePart(part).then(bytes => worker.postMessage({action:'modelPart',part,bytes}, [bytes]))
+              .catch(error => worker.postMessage({action:'modelPart',part,error:error.message}));
+          }
+          if (data.event === 'stage') {
+            byId('voiceHelp').textContent = data.label;
+          }
+          if (data.event === 'load' && data.result) finish(resolve)();
+          if (data.event === 'error' || (data.event === 'load' && !data.result)) failed(new Error(data.error || 'model failed'));
+        };
+        worker.postMessage({action:'set', key:'logLevel', value:-1});
+        fetch(speechAsset('vosk.wasm')).then(response => {
+          if (!response.ok) throw new Error('语音引擎下载失败');
+          return response.arrayBuffer();
+        }).then(wasmBinary => worker.postMessage({
+          action:'load', wasmBinary, wasmUrl:speechAsset('vosk.wasm'), modelUrl:speechAsset('mandarin-cn-022.tar.gz')
+        }, [wasmBinary])).catch(failed);
+      });
+    } catch (error) {
+      URL.revokeObjectURL(engineUrl);
+      worker.terminate();
+      throw error;
+    }
+    worker.onmessage = handleVoiceMessage;
+    const engineFailed = () => {
+      worker.terminate();
+      modelWorker = null;
+      if (speechAudio && !speechAudio.native) voiceUnavailable('离线识别已中断，可重试跟读或切回匀速。');
+    };
+    worker.onerror = engineFailed;
+    worker.onmessageerror = engineFailed;
+    modelWorker = worker;
+    navigator.storage?.persist?.().catch(() => {});
+    return worker;
+  })().finally(() => {
+    modelLoading = null;
+    renderSetup();
+    renderVoicePack();
+  });
+  renderVoicePack();
+  return modelLoading;
+}
+function handleVoiceMessage({data}) {
+  if (!data) return;
+  const session = speechAudio;
+  if (!session || data.recognizerId !== session.id) return;
+  if (data.event === 'error') {
+    voiceUnavailable('离线识别已中断，可重试跟读或切回匀速。');
+    return;
+  }
+  session.pending = Math.max(0, session.pending - 1);
+  const final = data.event === 'result';
+  const transcript = final ? data.result?.text : data.result?.partial;
+  if (transcript || final) followResult(transcript || '', final, session);
+}
+function stopVoice() {
+  const session = speechAudio;
+  speechAudio = null;
+  if (!session) return;
+  cancelAnimationFrame(session.resultFrame ?? 0);
+  if (session.node) session.node.port.onmessage = null;
+  session.trackListener?.abort();
+  session.source?.disconnect();
+  session.node?.disconnect();
+  session.ownStream?.getTracks().forEach(track => track.stop());
+  if (session.native && session.id) nativeSpeech.stop(session.id);
+  else if (session.worker && session.id) session.worker.postMessage({action:'remove', recognizerId:session.id});
+  session.context?.close().catch(() => {});
+}
+
+function voiceUnavailable(message) {
+  cancelArming();
+  setPhase('paused');
+  byId('voiceNotice').textContent = message;
+  byId('status').textContent = '跟读已暂停';
+}
+
+function useBackupVoice() {
+  nativeFailed = true;
+  stopVoice();
+  renderVoiceMode();
+  if (phase === 'playing' || phase === 'counting' || armTimer) {
+    byId('voiceNotice').textContent = '正在切换备用离线识别…';
+    startVoice();
+  }
+}
+
+async function startVoice() {
+  if (speechAudio || !voiceMode || document.hidden) return;
+  const native = Boolean(nativeSpeech && !preferMandarinVoice && !nativeFailed);
+  const session = {native, anchor:voiceCursor, transcript:'', pending:0, listening:false};
+  speechAudio = session;
+  byId('status').textContent = native || modelWorker ? '正在启动本机识别…' : '正在加载普通话模型…';
+  try {
+    session.context = native ? new AudioEngine({sampleRate:16000}) : new AudioEngine();
+    const resumed = session.context.resume();
+    const mic = stream?.getAudioTracks()[0];
+    const input = mic?.readyState === 'live' ? Promise.resolve(new MediaStream([mic]))
+      : navigator.mediaDevices.getUserMedia({audio:{channelCount:1}}).then(audio => {
+        if (speechAudio === session) session.ownStream = audio;
+        else audio.getTracks().forEach(track => track.stop());
+        return audio;
+      });
+
+    let engine;
+    if (native) {
+      if (session.context.sampleRate !== 16000) throw new Error('采样率不支持。');
+      session.id = ++nextRecognizer;
+      engine = nativeSpeech.start(session.id).then(result => {
+        if (result.error) throw new Error(result.error);
+      });
+    } else {
+      engine = prepareVoiceModel();
+    }
+
+    const [worker, microphone] = await Promise.all([
+      engine, input, resumed, session.context.audioWorklet.addModule(speechAsset('mic.js'))
+    ]);
+    if (speechAudio !== session) return;
+    const [track] = microphone.getAudioTracks();
+    if (track?.readyState !== 'live') throw new Error('麦克风已断开。');
+    session.trackListener = new AbortController();
+    track.addEventListener('ended', () => {
+      if (speechAudio === session) voiceUnavailable('麦克风已断开，请重新连接后继续。');
+    }, {once:true, signal:session.trackListener.signal});
+
+    if (!native) {
+      session.id = 'mandarin-' + ++nextRecognizer;
+      session.worker = worker;
+      worker.postMessage({action:'create', recognizerId:session.id, sampleRate:session.context.sampleRate});
+    }
+
+    session.anchor = voiceCursor;
+    session.source = session.context.createMediaStreamSource(microphone);
+    session.node = new AudioWorkletNode(session.context, 'prompter-microphone', {
+      channelCount:1, channelCountMode:'explicit', processorOptions:{pcm16:native}
+    });
+    session.node.port.onmessage = ({data}) => {
+      if (phase !== 'playing' || speechAudio !== session) return;
+      if (native) {
+        nativeSpeech.audio(session.id, data.buffer);
+      } else if (session.pending < 8) {
+        session.pending += 1;
+        worker.postMessage({
+          action:'audioChunk', recognizerId:session.id, sampleRate:session.context.sampleRate, data
+        }, [data.buffer]);
+      }
+    };
+    session.source.connect(session.node).connect(session.context.destination);
+    session.listening = true;
+    byId('voiceNotice').textContent = '';
+    if (phase === 'playing') byId('status').textContent = '正在聆听';
+  } catch (error) {
+    if (speechAudio !== session) return;
+    if (error.name === 'NotAllowedError' || error.name === 'SecurityError') {
+      voiceUnavailable('请在浏览器的网站权限和系统设置中允许访问麦克风。');
+    } else if (error.name === 'NotFoundError' || error.name === 'NotReadableError') {
+      voiceUnavailable('无法打开麦克风，请检查连接或关闭正在使用麦克风的应用。');
+    } else if (native) {
+      useBackupVoice();
+    } else {
+      voiceUnavailable('本机语音启动失败，可点「继续跟读」重试。');
+    }
+  }
+}
+
+nativeSpeech?.onUpdate(({id, type, text, final}) => {
+  const session = speechAudio;
+  if (!session?.native || session.id !== id) return;
+  if (type === 'preparing') {
+    byId('voiceNotice').textContent = '正在准备 Mac 普通话模型…';
+  } else if (type === 'error') {
+    useBackupVoice();
+  } else if (type === 'result' && phase === 'playing') {
+    if (final) {
+      cancelAnimationFrame(session.resultFrame ?? 0);
+      session.resultFrame = 0;
+      followResult(text || session.latest || '', true, session);
+      session.latest = '';
+      return;
+    }
+    session.latest = text || '';
+    if (!session.resultFrame) {
+      session.resultFrame = requestAnimationFrame(() => {
+        session.resultFrame = 0;
+        if (speechAudio === session) followResult(session.latest, false, session);
+      });
+    }
+  }
+});
+
+function renderVoiceMode() {
+  byId('speedMode').setAttribute('aria-pressed', String(!voiceMode));
+  byId('voiceMode').setAttribute('aria-pressed', String(voiceMode));
+  byId('speedSetting').hidden = voiceMode;
+  byId('speedControl').hidden = voiceMode;
+  byId('voiceEngines').hidden = !voiceMode || !nativeSpeech || !offlineVoiceSupported;
+  const mandarin = preferMandarinVoice || nativeFailed;
+  byId('macVoice').setAttribute('aria-pressed', String(!mandarin));
+  byId('mandarinVoice').setAttribute('aria-pressed', String(mandarin));
+  const toggle = byId('modeToggle');
+  toggle.textContent = voiceMode ? '切到匀速' : '切到跟读';
+  toggle.setAttribute('aria-pressed', String(voiceMode));
+  toggle.hidden = !voiceSupported;
+  renderVoicePack();
+}
+
+function setVoiceMode(enabled) {
+  voiceMode = enabled;
+  renderVoiceMode();
+  renderSetup();
+  save();
+  warmLocalVoice();
+}
+
+function warmLocalVoice() {
+  if (voiceMode && (preferMandarinVoice || nativeFailed) && offlineVoiceSupported) {
+    prepareVoiceModel().catch(() => {});
+  }
+}
+
+byId('speedMode').addEventListener('click', () => setVoiceMode(false));
+byId('voiceMode').addEventListener('click', () => setVoiceMode(true));
+byId('macVoice').addEventListener('click', () => {
+  preferMandarinVoice = false;
+  nativeFailed = false;
+  setVoiceMode(true);
+});
+byId('mandarinVoice').addEventListener('click', () => {
+  preferMandarinVoice = true;
+  setVoiceMode(true);
+});
+
+byId('modeToggle').addEventListener('click', () => {
+  if (armTimer) return;
+  const wasPlaying = phase === 'playing';
+  const cursor = voiceMode && viewport.scrollTop === lastVoiceScroll ? voiceCursor : voiceIndexAtScroll();
+  setPhase('paused');
+  byId('voiceNotice').textContent = '';
+  setVoiceMode(!voiceMode);
+  layoutCopy();
+  voiceCursor = cursor;
+  viewport.scrollTop = voiceLine(cursor);
+  lastVoiceScroll = viewport.scrollTop;
+  position = viewport.scrollTop;
+  renderProgress();
+  if (wasPlaying || recording && !voiceMode) {
+    setPhase('playing');
+  }
+});
+
+const draftsDialog = byId('draftsDialog');
+const saveDraftButton = byId('saveDraft');
+const draftRenameForm = byId('draftRenameForm');
+const draftRenameTitle = byId('draftRenameTitle');
+const draftRenameStatus = byId('draftRenameStatus');
+const saveDraftTitle = byId('saveDraftTitle');
+let draftDatabase;
+let currentDraft;
+let savingDraft = false;
+
+function localTransaction(stores, mode, action) {
+  draftDatabase ??= new Promise((resolve, reject) => {
+    const request = indexedDB.open('qing-prompter-drafts', 2);
+    request.onupgradeneeded = event => {
+      const db = request.result;
+      if (event.oldVersion < 1) db.createObjectStore('drafts', {keyPath:'id'});
+      db.createObjectStore('recordings', {keyPath:'id'});
+      db.createObjectStore('recordingChunks', {keyPath:['id', 'sequence']});
+    };
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => { db.close(); draftDatabase = null; };
+      resolve(db);
+    };
+    request.onerror = () => reject(request.error);
+  }).catch(error => { draftDatabase = null; throw error; });
+  return draftDatabase.then(database => new Promise((resolve, reject) => {
+    const transaction = database.transaction(stores, mode);
+    const request = action(transaction);
+    transaction.oncomplete = () => resolve(request?.result);
+    transaction.onabort = () => reject(transaction.error);
+  }));
+}
+function draftTitle(draft) {
+  return draft.title || draft.text.trim().split(/\r?\n/, 1)[0].slice(0, 30) || '未命名口播';
+}
+function makeDraft(text, file = null) {
+  return {id:crypto.randomUUID(), text, file, created:Date.now()};
+}
+function chunkRange(id) {
+  return IDBKeyRange.bound([id, 0], [id, Number.MAX_SAFE_INTEGER]);
+}
+function removeRecording(transaction, id) {
+  transaction.objectStore('recordings').delete(id);
+  transaction.objectStore('recordingChunks').delete(chunkRange(id));
+}
+function clearRecording(id) {
+  return localTransaction(['recordings', 'recordingChunks'], 'readwrite', tx => removeRecording(tx, id));
+}
+function addRecording(draft, mime) {
+  return localTransaction('recordings', 'readwrite', tx => tx.objectStore('recordings').add({...draft, mime}));
+}
+function checkpointRecording(id, sequence, blob) {
+  return localTransaction('recordingChunks', 'readwrite', tx =>
+    tx.objectStore('recordingChunks').add({id, sequence, blob}));
+}
+function recordingFile(draft, chunks, fallbackMime) {
+  const mime = chunks[0].type || fallbackMime || 'video/webm';
+  const extension = mime.includes('mp4') ? 'mp4' : 'webm';
+  const stamp = new Date(draft.created).toISOString().slice(0,19).replace(/[:T]/g, '-');
+  return new File(chunks, '比特书房提词器-' + stamp + '.' + extension, {type:mime});
+}
+async function recoverRecordings() {
+  const sessions = await localTransaction('recordings', 'readonly', tx => tx.objectStore('recordings').getAll());
+  let recovered = 0;
+  let empty = 0;
+  for (const {mime, ...draft} of sessions) {
+    const chunks = await localTransaction('recordingChunks', 'readonly', tx =>
+      tx.objectStore('recordingChunks').getAll(chunkRange(draft.id)));
+    if (chunks.length) {
+      draft.file = recordingFile(draft, chunks.map(chunk => chunk.blob), mime);
+      draft.recovered = true;
+      await writeDraft(draft, true);
+      recovered++;
+    } else {
+      await clearRecording(draft.id);
+      empty++;
+    }
+  }
+  if (recovered || empty) {
+    byId('setupNotice').textContent = [
+      recovered ? '草稿箱已恢复 ' + recovered + ' 段未完成录制，请预览确认。' : '',
+      empty ? '有 ' + empty + ' 段录制在写入视频前中断。' : ''
+    ].filter(Boolean).join(' ');
+    if (draftsDialog.open) renderDrafts();
+  }
+}
+async function writeDraft(draft, finalize = false) {
+  await localTransaction(finalize ? ['drafts', 'recordings', 'recordingChunks'] : 'drafts', 'readwrite', tx => {
+    const request = tx.objectStore('drafts').put(draft);
+    if (finalize) removeRecording(tx, draft.id);
+    return request;
+  });
+  navigator.storage?.persist?.().catch(() => {});
+}
+async function updateDraftTitle(id, title) {
+  let updated;
+  await localTransaction('drafts', 'readwrite', tx => {
+    const drafts = tx.objectStore('drafts');
+    const request = drafts.get(id);
+    request.onsuccess = () => {
+      if (!request.result) return;
+      updated = {...request.result, title};
+      drafts.put(updated);
+    };
+  });
+  if (!updated) throw new Error('Draft missing');
+  return updated;
+}
+async function renderDrafts() {
+  const list = byId('draftList');
+  list.replaceChildren();
+  byId('draftStatus').textContent = '正在读取…';
+  try {
+    const drafts = await localTransaction('drafts', 'readonly', tx => tx.objectStore('drafts').getAll());
+    drafts.sort((a,b) => b.created - a.created);
+    byId('draftStatus').textContent = drafts.length ? '' : '还没有草稿。';
+    for (const draft of drafts) {
+      const row = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = draftTitle(draft);
+      button.addEventListener('click', () => openDraft(draft));
+      const details = document.createElement('span');
+      details.className = 'small';
+      details.textContent = (draft.recovered ? '中断后恢复 · ' : draft.file ? '视频和稿件 · ' : '稿件 · ') +
+        new Date(draft.created).toLocaleString('zh-CN');
+      row.append(button,details);
+      list.append(row);
+    }
+  } catch {
+    byId('draftStatus').textContent = '无法读取本机草稿。';
+  }
+}
+function openDraft(draft) {
+  currentDraft = draft;
+  draftRenameForm.hidden = true;
+  byId('draftDetailStatus').textContent = draft.recovered ? '这是中断前已写入的视频，末尾可能缺失。请先预览。' : '';
+  byId('draftDetailTitle').textContent = draftTitle(draft);
+  byId('draftText').textContent = draft.text;
+  const video = byId('draftVideo');
+  video.hidden = !draft.file;
+  byId('draftDownload').hidden = !draft.file;
+  byId('draftShare').hidden = !draft.file || !navigator.canShare?.({files:[draft.file]});
+  if (draft.file) {
+    const url = URL.createObjectURL(draft.file);
+    video.src = url;
+    byId('draftDownload').href = url;
+    byId('draftDownload').download = draft.file.name;
+  }
+  byId('draftDetail').showModal();
+}
+byId('draftDetail').addEventListener('close', () => {
+  const video = byId('draftVideo');
+  const url = video.getAttribute('src');
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+  if (url) URL.revokeObjectURL(url);
+  byId('draftDownload').removeAttribute('href');
+  currentDraft = null;
+});
+byId('openDrafts').addEventListener('click', () => { draftsDialog.showModal(); renderDrafts(); });
+function hideDraftRename() {
+  draftRenameForm.hidden = true;
+  byId('renameDraft').focus();
+}
+byId('renameDraft').addEventListener('click', () => {
+  if (!currentDraft) return;
+  draftRenameTitle.value = draftTitle(currentDraft);
+  draftRenameStatus.textContent = '';
+  draftRenameForm.hidden = false;
+  draftRenameTitle.focus();
+  draftRenameTitle.select();
+});
+byId('cancelDraftRename').addEventListener('click', hideDraftRename);
+draftRenameForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!currentDraft || saveDraftTitle.disabled) return;
+  const draft = currentDraft;
+  const title = draftRenameTitle.value.trim();
+  if (!title) {
+    draftRenameStatus.textContent = '请输入草稿标题。';
+    draftRenameTitle.focus();
+    return;
+  }
+  saveDraftTitle.disabled = true;
+  draftRenameStatus.textContent = '';
+  try {
+    const updated = await updateDraftTitle(draft.id, title);
+    if (currentDraft?.id === draft.id) {
+      currentDraft = updated;
+      byId('draftDetailTitle').textContent = draftTitle(updated);
+      hideDraftRename();
+    }
+    if (draftsDialog.open) renderDrafts();
+  } catch {
+    if (currentDraft?.id === draft.id) draftRenameStatus.textContent = '标题保存失败，请重试。';
+  } finally { saveDraftTitle.disabled = false; }
+});
+byId('useDraft').addEventListener('click', () => {
+  if (!currentDraft || (script.value.trim() && script.value !== currentDraft.text && !confirm('用这份草稿替换编辑区的稿件？'))) return;
+  script.value = currentDraft.text;
+  updateSetup();
+  byId('draftDetail').close();
+  draftsDialog.close();
+});
+byId('draftShare').addEventListener('click', () => {
+  if (currentDraft?.file) navigator.share({files:[currentDraft.file]}).catch(error => {
+    if (error.name !== 'AbortError') byId('draftDetailStatus').textContent = '系统分享未完成，可以下载视频。';
+  });
+});
+byId('saveScriptDraft').addEventListener('click', async () => {
+  const button = byId('saveScriptDraft');
+  button.disabled = true;
+  try {
+    await writeDraft(makeDraft(script.value));
+    byId('saveState').textContent = '稿件已存入草稿箱';
+  } catch {
+    byId('saveState').textContent = '保存失败，请检查可用空间。';
+  } finally { renderSetup(); }
+});
+saveDraftButton.addEventListener('click', async () => {
+  if (!take || savingDraft || take.saved) return;
+  const current = take;
+  savingDraft = true;
+  saveDraftButton.disabled = true;
+  try {
+    await writeDraft(current.draft, true);
+    current.saved = true;
+    saveDraftButton.textContent = '已存草稿';
+    byId('takeNotice').textContent = '视频和稿件已存到本机草稿箱。';
+  } catch {
+    saveDraftButton.disabled = false;
+    byId('takeNotice').textContent = '草稿保存失败，可以先下载视频。';
+  } finally { savingDraft = false; }
+});
+renderSetup();
+renderVoiceMode();
+save();
+window.prompterDesktop?.setSessionActive(false);
+if (new URLSearchParams(location.search).has('recovered')) {
+  byId('setupNotice').textContent = '提词窗口已重新载入，可从上次保存的位置继续。';
+}
+recoverRecordings().catch(() => {
+  byId('setupNotice').textContent = '暂时无法读取中断前的录制备份，可重新打开比特书房提词器后再试。';
+});
+
+function syncInstallState() {
+  byId('installButton').hidden = standalone.matches || !window.isSecureContext;
+  byId('offlineState').textContent = offlineReady ? '页面已缓存。首次跟读加载模型后，即可离线跟读。'
+    : hadOfflineError ? '此浏览器暂未完成离线缓存。' : '正在准备离线缓存。';
+}
+standalone.addEventListener('change', syncInstallState);
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  installPrompt = event;
+});
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  syncInstallState();
+});
+byId('installButton').addEventListener('click', async () => {
+  if (installPrompt) {
+    const prompt = installPrompt;
+    installPrompt = null;
+    try { await prompt.prompt(); return; } catch {}
+  }
+  byId('installDialog').showModal();
+});
+syncInstallState();
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(() => navigator.serviceWorker.ready).then(() => {
+    offlineReady = true;
+    syncInstallState();
+  }).catch(() => {
+    hadOfflineError = true;
+    syncInstallState();
+  });
+} else {
+  hadOfflineError = true;
+  syncInstallState();
+}
+</script>
+</body>
+</html>
